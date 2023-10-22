@@ -8,10 +8,18 @@ const cors = require("cors");
 app.use(cors());
 
 //for export data retrival
-let mongoose1 = require("mongoose");
+let mongoose = require("mongoose");
 
-//for data submission
-let mongoose2 = require("mongoose");
+mongoose.set("strictQuery", true);
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    start_prg();
+  })
+  .catch((error) => {
+    console.log("The error is = " + error);
+  });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,19 +36,7 @@ function start_prg() {
   app.use(express.static(__dirname + "/FrontEnd"));
 }
 
-mongoose1.set("strictQuery", true);
-mongoose2.set("strictQuery", true);
-
-mongoose1
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    start_prg();
-  })
-  .catch((error) => {
-    console.log("The error is = " + error);
-  });
-
-const Schema = mongoose1.Schema;
+const Schema = mongoose.Schema;
 
 const exportSchema = new Schema({
   Supplier: { type: String },
@@ -67,8 +63,8 @@ const importSchema = new Schema({
   input7: { type: String },
 });
 
-let export_db = mongoose1.model("export", exportSchema);
-let import_db = mongoose1.model("import", importSchema);
+let export_db = mongoose.model("export", exportSchema);
+let import_db = mongoose.model("import", importSchema);
 //const Record = mongoose.model('Record', recordSchema);
 app.get("/sup-fetch", function (req, res) {
   //  res.send(getSup());
