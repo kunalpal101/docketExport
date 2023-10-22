@@ -7,7 +7,11 @@ let app = express();
 const cors = require("cors");
 app.use(cors());
 
-let mongoose = require("mongoose");
+//for export data retrival
+let mongoose1 = require("mongoose");
+
+//for data submission
+let mongoose2 = require("mongoose");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -24,9 +28,10 @@ function start_prg() {
   app.use(express.static(__dirname + "/FrontEnd"));
 }
 
-mongoose.set("strictQuery", true);
+mongoose1.set("strictQuery", true);
+mongoose2.set("strictQuery", true);
 
-mongoose
+mongoose1
   .connect(process.env.MONGO_URI)
   .then(() => {
     start_prg();
@@ -35,15 +40,36 @@ mongoose
     console.log("The error is = " + error);
   });
 
-const Schema = mongoose.Schema;
+const Schema = mongoose1.Schema;
 
 const exportSchema = new Schema({
   Supplier: { type: String },
   po: { type: String },
 });
 
-let export_db = mongoose.model("export", exportSchema);
+// const importSchema = new Schema({
+//   name: { type: String },
+//   start_time: { type: String },
+//   end_time: { type: String },
+//   hours: { type: String },
+//   rate: { type: String },
+//   supp: { type: String },
+//   po: { type: String },
+// });
 
+const importSchema = new Schema({
+  input1: { type: String },
+  input2: { type: String },
+  input3: { type: String },
+  input4: { type: String },
+  input5: { type: String },
+  input6: { type: String },
+  input7: { type: String },
+});
+
+let export_db = mongoose1.model("export", exportSchema);
+let import_db = mongoose1.model("import", importSchema);
+//const Record = mongoose.model('Record', recordSchema);
 app.get("/sup-fetch", function (req, res) {
   //  res.send(getSup());
   export_db
@@ -60,7 +86,7 @@ app.get("/sup-fetch", function (req, res) {
 app.post("/po-fetch", function (req, res) {
   //  res.send(getSup());
   let body = req.body;
-  console.log(body.Supplier);
+  //console.log(body.Supplier);
   export_db
     .find({ Supplier: body.Supplier }, { "PO Number": 1, _id: 0 })
     //.select("PO Number")
@@ -83,6 +109,39 @@ app.post("/po-fetch", function (req, res) {
     });
 });
 
+app.post("/submit-data", async function (req, res) {
+  let body = req.body;
+  console.log(body.input1);
+  //console.log(body.Supplier);
+  let new_export = new import_db({
+    input1: body.input1,
+    input2: body.input2,
+    input3: body.input3,
+    input4: body.input4,
+    input5: body.input5,
+    input6: body.input6,
+    input7: body.input7,
+  });
+  try {
+    const data = await new_export.save();
+    res.json({
+      status: "success",
+      savedData: data,
+    });
+  } catch (err) {
+    if (err) console.log(err);
+  }
+});
+
+app.get("/get-data", async (req, res) => {
+  try {
+    const records = await import_db.find();
+    res.json(records);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching records" });
+  }
+});
+
 function getSup() {
   export_db
     .distinct("Supplier")
@@ -94,8 +153,6 @@ function getSup() {
       console.error("Error:", error);
     });
 }
-
-//fun();
 
 function getPO() {
   export_db
@@ -117,5 +174,3 @@ function getPO() {
       console.error("Error: ", err);
     });
 }
-
-//getPO();
